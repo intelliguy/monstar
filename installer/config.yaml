@@ -1,0 +1,65 @@
+version: argoproj.io/v1alpha1
+metadata:
+  name: config-zero
+  simultaneous: true
+workflow:
+  lma:
+    1:
+    - prometheus-operator
+    - elasticsearch-operator
+    - fluentbit-operator
+    2:
+    - elasticsearch-kibana
+    - prometheus
+    - kube-state-metrics
+    - prometheus-process-exporter
+    - prometheus-pushgateway
+    - prometheus-node-exporter
+    - prometheus-adapter
+    - addons
+    3:
+    - prometheus-fed-master
+    - fluentbit
+    - fed-addons
+    - grafana
+  lma_alone:
+    1:
+    - prometheus-operator
+    - elasticsearch-operator
+    - fluentbit-operator
+    2:
+    - elasticsearch-kibana
+    - prometheus
+    - kube-state-metrics
+    - prometheus-process-exporter
+    - prometheus-pushgateway
+    - prometheus-node-exporter
+    - prometheus-adapter
+    - addons
+    3:
+    - prometheus-fed-master
+    - fluentbit
+    - fed-addons
+    - grafana
+  default:
+    1:
+    - prometheus-operator
+    - elasticsearch-operator
+    - fluentbit-operator
+    2:
+    - elasticsearch-kibana
+    - prometheus
+    - kube-state-metrics
+    - prometheus-process-exporter
+    - prometheus-pushgateway
+    - prometheus-node-exporter
+    - prometheus-adapter
+    - addons
+    3:
+    - prometheus-fed-master
+    - fluentbit
+    - fed-addons
+    - grafana
+  test:
+    1:
+      - fed-addons
