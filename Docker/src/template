@@ -4,9 +4,9 @@ import sys, yaml, os, time
 
 TEMPDIR="tmp"
 
-def template_yaml(manifests):
+def template_yaml(manifests, gdir):
   for chart in manifests.keys():
-    manifests[chart].generateSeperatedResources()
+    manifests[chart].generateSeperatedResources(gdir)
 
 
 def load_manifest(manifest,target):
@@ -32,20 +32,19 @@ def load_manifest(manifest,target):
   return manifests
 
 def printhelp():
-    print('Usage: template APP_MANIFEST')
+    print('Usage: template APP_MANIFEST DIR_TO_GENERATE')
 
 def main(argv):
-  if (len(sys.argv)!=2):
+  if (len(sys.argv)!=3):
     printhelp()
     sys.exit(-1)
 
   try:
     manifests=load_manifest(sys.argv[1], TEMPDIR)
 
-    template_yaml(manifests)
+    template_yaml(manifests, sys.argv[2])
   except yaml.YAMLError as exc:
     print(exc)
-
 
 if __name__ == "__main__":
   main(sys.argv[1:])
