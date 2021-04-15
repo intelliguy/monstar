@@ -1,0 +1,15 @@
+
+# Source: thanos/charts/minio/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: thanos-minio
+  namespace: "fed"
+  labels:
+    app.kubernetes.io/name: minio
+    helm.sh/chart: minio-6.0.0
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/managed-by: Helm
+secrets:
+  - name: thanos-minio
+

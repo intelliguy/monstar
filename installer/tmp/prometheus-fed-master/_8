@@ -1,0 +1,19 @@
+
+# Source: kube-prometheus-stack/templates/prometheus/psp-clusterrole.yaml
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fed-master-prometheus-psp
+  labels:
+    app: kube-prometheus-stack-prometheus
+    
+    chart: kube-prometheus-stack-13.7.2
+    release: "prometheus-fed-master"
+    heritage: "Helm"
+rules:
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - fed-master-prometheus
+

@@ -1,0 +1,16 @@
+
+# Source: fluentbit-operator/templates/operator/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluentbit-operator-operator
+  namespace: lma
+  labels:
+    app: fluentbit-operator-operator
+    
+    chart: fluentbit-operator-1.0.10
+    release: "fluentbit-operator"
+    heritage: "Helm"
+imagePullSecrets:
+  []
+

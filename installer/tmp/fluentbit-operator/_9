@@ -1,0 +1,51 @@
+
+# Source: fluentbit-operator/templates/operator/job-cleanup.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: fluentbit-operator-operator-cleanup
+  namespace: lma
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-weight": "3"
+    "helm.sh/hook-delete-policy": hook-succeeded
+  labels:
+    app: fluentbit-operator-operator
+    
+    chart: fluentbit-operator-1.0.10
+    release: "fluentbit-operator"
+    heritage: "Helm"
+spec:
+  template:
+    metadata:
+      name: fluentbit-operator-operator-cleanup
+      labels:
+        app: fluentbit-operator-operator
+        
+        chart: fluentbit-operator-1.0.10
+        release: "fluentbit-operator"
+        heritage: "Helm"
+    spec:
+      serviceAccountName: fluentbit-operator-operator
+      containers:
+        - name: kubectl
+          image: "k8s.gcr.io/hyperkube:v1.17.6"
+          imagePullPolicy: "IfNotPresent"
+          command:
+          - /bin/sh
+          - -c
+          - >
+              kubectl delete filter --all;
+              kubectl delete input --all;
+              kubectl delete output --all;
+              kubectl delete fluentbitconfig --all;
+              kubectl delete fluentbit --all;
+              sleep 10;
+
+              kubectl delete crd filters.logging.kubesphere.io;
+              kubectl delete crd fluentbitconfigs.logging.kubesphere.io;
+              kubectl delete crd fluentbits.logging.kubesphere.io;
+              kubectl delete crd inputs.logging.kubesphere.io;
+              kubectl delete crd outputs.logging.kubesphere.io;
+      restartPolicy: OnFailure
+

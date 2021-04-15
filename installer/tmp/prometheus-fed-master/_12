@@ -1,0 +1,22 @@
+
+# Source: kube-prometheus-stack/templates/alertmanager/psp-rolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: fed-master-alertmanager
+  namespace: fed
+  labels:
+    app: kube-prometheus-stack-alertmanager
+    
+    chart: kube-prometheus-stack-13.7.2
+    release: "prometheus-fed-master"
+    heritage: "Helm"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: fed-master-alertmanager
+subjects:
+  - kind: ServiceAccount
+    name: fed-master-alertmanager
+    namespace: fed
+

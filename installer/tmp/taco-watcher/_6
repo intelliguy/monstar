@@ -1,0 +1,22 @@
+
+# Source: taco-watcher/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: taco-watcher-test-connection
+  labels:
+    app.kubernetes.io/name: taco-watcher
+    helm.sh/chart: taco-watcher-0.1.0
+    app.kubernetes.io/instance: taco-watcher
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: test
+      image: busybox
+      command: ['wget']
+      args:  [taco-watcher:32000]
+  restartPolicy: Never
+

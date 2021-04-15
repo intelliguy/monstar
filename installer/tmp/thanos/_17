@@ -1,0 +1,25 @@
+
+# Source: thanos/templates/query-frontend/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-query-frontend
+  labels:
+    app.kubernetes.io/name: thanos
+    helm.sh/chart: thanos-3.4.0
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/component: query-frontend
+spec:
+  type: NodePort
+  ports:
+    - port: 9090
+      targetPort: http
+      protocol: TCP
+      name: http
+      nodePort: 30007
+  selector:
+    app.kubernetes.io/name: thanos
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/component: query-frontend
+

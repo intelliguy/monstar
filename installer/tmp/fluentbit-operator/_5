@@ -1,0 +1,22 @@
+
+# Source: fluentbit-operator/templates/operator/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fluentbit-operator-operator
+  namespace: lma
+  labels:
+    app: fluentbit-operator-operator
+    
+    chart: fluentbit-operator-1.0.10
+    release: "fluentbit-operator"
+    heritage: "Helm"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fluentbit-operator-operator
+subjects:
+- kind: ServiceAccount
+  name: fluentbit-operator-operator
+  namespace: lma
+

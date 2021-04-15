@@ -1,0 +1,21 @@
+
+# Source: taco-watcher/templates/pvc.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: taco-watcher-pvc
+  labels:
+    app: taco-watcher
+    chart: taco-watcher-0.1.0
+    heritage: Helm
+    release: taco-watcher
+spec:
+  storageClassName: rbd
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    limits: 
+      storage: 100Mi 
+    requests:
+      storage: 100Mi
+

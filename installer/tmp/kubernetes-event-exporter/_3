@@ -1,0 +1,31 @@
+
+# Source: kubernetes-event-exporter/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubernetes-event-exporter
+  labels:
+    helm.sh/chart: kubernetes-event-exporter-1.0.0
+    app.kubernetes.io/name: event-exporter
+    app.kubernetes.io/instance: kubernetes-event-exporter
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  config.yaml: |
+    logLevel: error
+    logFormat: json
+    route:
+      routes:
+      - match:
+        - receiver: default
+    receivers:
+    - name: "default"
+      elasticsearch:
+        hosts:
+        - https://eck-elasticsearch-es-http.lma.svc.siim-dev:9200
+        index: kube-events
+        username: elastic
+        password: tacoword
+        tls: # optional, advanced options for tls
+          insecureSkipVerify: true
+

@@ -1,0 +1,97 @@
+usage: thanos [<flags>] <command> [<args> ...]
+
+A block storage based long-term storage for Prometheus.
+
+Flags:
+  -h, --help               Show context-sensitive help (also try --help-long and
+                           --help-man).  
+      --version            Show application version.
+      --log.level=info     Log filtering level.
+      --log.format=logfmt  Log format to use. Possible options: logfmt or json.
+      --tracing.config-file=<file-path>  
+                           Path to YAML file with tracing configuration. See
+                           format details:
+                           https://thanos.io/tip/thanos/tracing.md/#configuration
+      --tracing.config=<content>
+                           Alternative to 'tracing.config-file' flag (mutually
+                           exclusive). Content of YAML file with tracing
+                           configuration. See format details:
+                           https://thanos.io/tip/thanos/tracing.md/#configuration
+
+Commands:
+  help [<command>...]
+    Show help.
+
+  sidecar [<flags>]
+    Sidecar for Prometheus server.
+
+  store [<flags>]
+    Store node giving access to blocks in a bucket provider. Now supported GCS,
+    S3, Azure, Swift, Tencent COS and Aliyun OSS.
+
+  query [<flags>]
+    Query node exposing PromQL enabled Query API with data retrieved from
+    multiple store nodes.
+
+  rule [<flags>]
+    Ruler evaluating Prometheus rules against given Query nodes, exposing Store
+    API and storing old blocks in bucket.
+
+  compact [<flags>]
+    Continuously compacts blocks in an object store bucket.
+
+  tools bucket verify [<flags>]
+    Verify all blocks in the bucket against specified issues. NOTE: Depending on
+    issue this might take time and will need downloading all specified blocks to
+    disk.
+
+  tools bucket ls [<flags>]
+    List all blocks in the bucket.
+
+  tools bucket inspect [<flags>]
+    Inspect all blocks in the bucket in detailed, table-like way.
+
+  tools bucket web [<flags>]
+    Web interface for remote storage bucket.
+
+  tools bucket replicate [<flags>]
+    Replicate data from one object storage to another. NOTE: Currently it works
+    only with Thanos blocks (meta.json has to have Thanos metadata).
+
+  tools bucket downsample [<flags>]
+    Continuously downsamples blocks in an object store bucket.
+
+  tools bucket cleanup [<flags>]
+    Cleans up all blocks marked for deletion.
+
+  tools bucket mark --id=ID --marker=MARKER --details=DETAILS
+    Mark block for deletion or no-compact in a safe way. NOTE: If the compactor
+    is currently running compacting same block, this operation would be
+    potentially a noop.
+
+  tools bucket rewrite --id=ID [<flags>]
+    Rewrite chosen blocks in the bucket, while deleting or modifying series
+    Resulted block has modified stats in meta.json. Additionally
+    compaction.sources are altered to not confuse readers of meta.json. Instead
+    thanos.rewrite section is added with useful info like old sources and
+    deletion requests. NOTE: It's recommended to turn off compactor while doing
+    this operation. If the compactor is running and touching exactly same block
+    that is being rewritten, the resulted rewritten block might only cause
+    overlap (mitigated by marking overlapping block manually for deletion) and
+    the data you wanted to rewrite could already part of bigger block.
+
+    Use FILESYSTEM type of bucket to rewrite block on disk (suitable for vanilla
+    Prometheus) After rewrite, it's caller responsibility to delete or mark
+    source block for deletion to avoid overlaps. WARNING: This procedure is
+    *IRREVERSIBLE* after certain time (delete delay), so do backup your blocks
+    first.
+
+  tools rules-check --rules=RULES
+    Check if the rule files are valid or not.
+
+  receive [<flags>]
+    Accept Prometheus remote write API requests and write to local tsdb.
+
+  query-frontend [<flags>]
+    Query frontend command implements a service deployed in front of queriers to
+    improve query parallelization and caching.

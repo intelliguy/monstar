@@ -1,0 +1,20 @@
+
+# Source: kube-prometheus-stack/templates/alertmanager/psp-role.yaml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fed-master-alertmanager
+  namespace: fed
+  labels:
+    app: kube-prometheus-stack-alertmanager
+    
+    chart: kube-prometheus-stack-13.7.2
+    release: "prometheus-fed-master"
+    heritage: "Helm"
+rules:
+- apiGroups: ['policy']
+  resources: ['podsecuritypolicies']
+  verbs:     ['use']
+  resourceNames:
+  - fed-master-alertmanager
+

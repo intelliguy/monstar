@@ -2,14 +2,15 @@ version: argoproj.io/v1alpha1
 metadata:
   name: config-zero
   simultaneous: true
+  checkInterval: 20
 workflow:
   lma:
     1:
     - prometheus-operator
-    - elasticsearch-operator
+    - eck-operator
     - fluentbit-operator
     2:
-    - elasticsearch-kibana
+    - eck-resource
     - prometheus
     - kube-state-metrics
     - prometheus-process-exporter
@@ -41,13 +42,15 @@ workflow:
     - fluentbit
     - fed-addons
     - grafana
+  cloudconsole:
+
   default:
     1:
     - prometheus-operator
-    - elasticsearch-operator
+    - eck-operator
     - fluentbit-operator
     2:
-    - elasticsearch-kibana
+    - eck-resource
     - prometheus
     - kube-state-metrics
     - prometheus-process-exporter
@@ -60,6 +63,32 @@ workflow:
     - fluentbit
     - fed-addons
     - grafana
+    - thanos
+  openstack:
+    0:
+    - ingress
+    - memcached
+    - rabbitmq
+    - mariadb
+    1:
+    - keystone
+    - glance
+    - cinder
+    2:
+    - libvirt
+    - openvswitch
+    - nova
+    - neutron
+    3:
+    - horizon
+    - heat    
+  servicemesh:
+    1:
+    - istio-operator
+    - jaeger-operator
+    - kiali-operator
+    2:
+    - service-mesh-resource
   test:
     1:
       - fed-addons

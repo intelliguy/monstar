@@ -1,0 +1,23 @@
+
+# Source: thanos/charts/minio/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: thanos-minio
+  namespace: "fed"
+  labels:
+    app.kubernetes.io/name: minio
+    helm.sh/chart: minio-6.0.0
+    app.kubernetes.io/instance: thanos
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: NodePort
+  ports:
+    - name: minio
+      port: 9000
+      targetPort: minio
+      nodePort: 30002
+  selector:
+    app.kubernetes.io/name: minio
+    app.kubernetes.io/instance: thanos
+

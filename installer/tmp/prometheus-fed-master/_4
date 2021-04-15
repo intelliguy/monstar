@@ -1,0 +1,16 @@
+
+# Source: kube-prometheus-stack/templates/alertmanager/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fed-master-alertmanager
+  namespace: fed
+  labels:
+    app: kube-prometheus-stack-alertmanager
+    
+    chart: kube-prometheus-stack-13.7.2
+    release: "prometheus-fed-master"
+    heritage: "Helm"
+imagePullSecrets:
+  []
+

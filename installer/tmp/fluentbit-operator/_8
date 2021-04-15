@@ -1,0 +1,92 @@
+
+# Source: fluentbit-operator/templates/operator/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fluentbit-operator-operator
+  namespace: lma
+  labels:
+    app: fluentbit-operator-operator
+    
+    chart: fluentbit-operator-1.0.10
+    release: "fluentbit-operator"
+    heritage: "Helm"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fluentbit-operator-operator
+      release: "fluentbit-operator"
+  template:
+    metadata:
+      labels:
+        app: fluentbit-operator-operator
+        
+        chart: fluentbit-operator-1.0.10
+        release: "fluentbit-operator"
+        heritage: "Helm"
+    spec:
+      nodeSelector:
+        taco-lma: enabled
+      initContainers:
+        - name: setenv
+          image: "docker:19.03"
+          imagePullPolicy: "IfNotPresent"          
+          command: 
+          - sh
+          - '-c'
+          - /tmp/init-fluent-bit.env.sh
+          volumeMounts:
+          - name: env
+            mountPath: /fluentbit-operator
+          - name: dockersock
+            readOnly: true
+            mountPath: /var/run/docker.sock
+          - name: fluentbit-operator-bin
+            readOnly: true
+            mountPath: /tmp/init-fluent-bit.env.sh
+            subPath: init-fluent-bit-env.sh
+      containers:
+        - name: fluentbit-operator
+          image: "siim/fluentbit-operator:v0.1.1"
+          imagePullPolicy: "IfNotPresent"
+          resources:
+            limits:
+              cpu: "2"
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 20Mi
+          volumeMounts:
+          - name: env
+            mountPath: /fluentbit-operator
+#            
+#           - name: fluentbit-bin
+#             readOnly: true
+#             mountPath: /tmp/pre-stop-hook-script.sh
+#             subPath: pre-stop-hook-script.sh
+#           lifecycle:
+#             preStop:
+#               exec:
+#                 command:
+#                   - bash
+#                   - '-c'
+#                   - /tmp/pre-stop-hook-script.sh
+#
+          # securityContext:
+          #   allowPrivilegeEscalation: false
+          #   readOnlyRootFilesystem: true
+      volumes:
+        - name: env
+          emptyDir: {}
+        - name: dockersock
+          hostPath:
+            path: /var/run/docker.sock
+        - name: fluentbit-operator-bin
+          configMap:
+            name: fluentbit-operator-bin
+            defaultMode: 365
+      serviceAccountName: fluentbit-operator-operator
+      nodeSelector:
+        taco-lma: enabled
+
