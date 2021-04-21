@@ -32,3 +32,5 @@ Using example
 > sed -i ’s/cluster.local/[YOUR_CLUSTER_NAME]/g’ lma-manifest.yaml
 > ./intaller-linux -m lma-manifest.yaml
 ```
+
+

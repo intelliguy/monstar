@@ -67,7 +67,7 @@ class Helm:
     os.system('helm template -n {0} {1} monstarrepo/{2} --version {3} -f vo > {4}/{1}.plain.yaml'
       .format(self.namespace, self.name, self.chart, self.version, targetdir))
     target = '{}/{}'.format(targetdir, self.name)
-    splitcmd = "awk '{f=\""+target+"/_\" NR; print $0 > f}' RS='---' "+target+".plain.yaml"
+    splitcmd = "awk '{f=\""+target+"/_\" NR; print $0 > f}' RS='\n---\n' "+target+".plain.yaml"
     os.system(splitcmd)
     for entry in os.scandir(target):
       refinedname =''
@@ -78,7 +78,8 @@ class Helm:
         except yaml.YAMLError as exc:
           print(exc, parsed)
         except TypeError as exc:
-          print(exc, entry)
+          if (self.name != '_1' ):
+            print(exc, parsed)
       if (refinedname!=''):
         os.rename(entry, target+'/'+refinedname)
       else: 
