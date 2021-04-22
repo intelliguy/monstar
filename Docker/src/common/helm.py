@@ -64,8 +64,13 @@ class Helm:
     os.system('helm repo add monstarrepo {} | grep -i error'
       .format(self.repo))
     os.system('mkdir -p {}/{}'.format(targetdir, self.name))
-    os.system('helm template -n {0} {1} monstarrepo/{2} --version {3} -f vo > {4}/{1}.plain.yaml'
-      .format(self.namespace, self.name, self.chart, self.version, targetdir))
+
+    if self.name.endswith('-operator'):
+      os.system('helm template -n {0} {1} monstarrepo/{2} --version {3} -f vo --include-crds  > {4}/{1}.plain.yaml'
+        .format(self.namespace, self.name, self.chart, self.version, targetdir))
+    else:
+      os.system('helm template -n {0} {1} monstarrepo/{2} --version {3} -f vo > {4}/{1}.plain.yaml'
+        .format(self.namespace, self.name, self.chart, self.version, targetdir))
     target = '{}/{}'.format(targetdir, self.name)
     splitcmd = "awk '{f=\""+target+"/_\" NR; print $0 > f}' RS='\n---\n' "+target+".plain.yaml"
     os.system(splitcmd)
