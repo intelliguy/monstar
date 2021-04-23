@@ -71,9 +71,11 @@ class Helm:
     else:
       os.system('helm template -n {0} {1} monstarrepo/{2} --version {3} -f vo > {4}/{1}.plain.yaml'
         .format(self.namespace, self.name, self.chart, self.version, targetdir))
+
     target = '{}/{}'.format(targetdir, self.name)
     splitcmd = "awk '{f=\""+target+"/_\" NR; print $0 > f}' RS='\n---\n' "+target+".plain.yaml"
     os.system(splitcmd)
+    
     for entry in os.scandir(target):
       refinedname =''
       with open(entry, 'r') as stream:
@@ -81,15 +83,16 @@ class Helm:
           parsed = yaml.safe_load(stream)
           refinedname = '{}_{}.yaml'.format(parsed['kind'],parsed['metadata']['name'])
         except yaml.YAMLError as exc:
-          print(exc, parsed)
+          print(exc,":::", parsed)
         except TypeError as exc:
-          if (self.name != '_1' ):
-            print(exc, parsed)
+          # if (entry.name != '_1' ):
+          print(exc,":::", parsed)
+          print("Contents in the file :", entry.name)
+          print(stream.readlines())
       if (refinedname!=''):
         os.rename(entry, target+'/'+refinedname)
       else: 
         os.remove(entry)
-
 
     # os.system("""awk '{f="tmp/{0}/_" NR; print $0 > f}' RS='---' tmp/{0}.plain.yaml""".format(self.name))
     os.system("rm {}/{}.plain.yaml".format(targetdir, self.name))
