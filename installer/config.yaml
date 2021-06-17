@@ -58,12 +58,12 @@ workflow:
     - prometheus-node-exporter
     - prometheus-adapter
     - addons
+    - thanos-config
+    - thanos
     3:
-    - prometheus-fed-master
     - fluentbit
     - fed-addons
     - grafana
-    - thanos
   openstack:
     0:
     - ingress
@@ -87,9 +87,12 @@ workflow:
     1:
     - istio-operator
     - jaeger-operator
-    - kiali-operator
     2:
-    - service-mesh-resource
+    - kiali-operator
+    - service-mesh-controlplane
+    - service-mesh-gateway
   test:
     1:
-      - fed-addons
+      - istio-operator
+    2: 
+      - eck-operator

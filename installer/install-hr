@@ -1,6 +1,6 @@
 #!/usr/local/bin/python3
 from common.helm import Helm
-from common.repos import Repos
+from common.repo import Repo, RepoType
 import sys, yaml, os, time, getopt
 
 TEMPDIR="tmp"
@@ -47,12 +47,28 @@ def load_manifest(manifest):
       with open(entry, 'r') as stream:
         try:
           parsed = yaml.safe_load(stream)
+          if parsed['spec']['chart'].get('git')!=None:
+            repo = Repo(
+              # repotype, repo, chartOrPath, versionOrReference):
+              RepoType.GIT,
+              parsed['spec']['chart']['git'],
+              parsed['spec']['chart']['path'],
+              parsed['spec']['chart']['ref'])
+          elif parsed['spec']['chart'].get('repository')!=None:
+            repo = Repo(
+              # repotype, repo, chartOrPath, versionOrReference):
+              RepoType.HELMREPO,
+              parsed['spec']['chart']['repository'],
+              parsed['spec']['chart']['name'],
+              parsed['spec']['chart']['version'])
+          else:
+            print('Wrong repo {0}',parsed)
+
+          # self, repo, name, namespace, override):
           manifests[parsed['metadata']['name']]=Helm( 
-            parsed['spec']['chart']['repository'],
-            parsed['spec']['chart']['name'],
+            repo,
             parsed['spec']['releaseName'],
             parsed['spec']['targetNamespace'],
-            parsed['spec']['chart']['version'],
             parsed['spec']['values'])
         except yaml.YAMLError as exc:
           print(exc)

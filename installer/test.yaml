@@ -1,0 +1,48 @@
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: istio-operator
+  name: istio-operator
+spec:
+  chart:
+    name: istio-operator
+    repository: https://openinfradev.github.io/helm-repo
+    version: 1.7.0
+  helmVersion: v3
+  releaseName: istio-operator
+  targetNamespace: istio-system
+  values:
+    operatorNamespace: istio-operator
+    watchedNamespaces: istio-system,istio-gateway
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: eck-operator
+  name: eck-operator
+spec:
+  chart:
+    # git: git@github.com:fluxcd/flux-get-started
+    # ref: master
+    # path: charts/ghost
+    git: git@github.com:openinfradev/helm-charts
+    ref: enabled-dashboard
+    path: elasticsearch-operator
+  helmVersion: v3
+  releaseName: eck-operator
+  targetNamespace: elastic-system
+  values:
+    config:
+      containerRegistry: docker.elastic.co
+    installCRDs: true
+    internal:
+      createOperatorNamespace: false
+      kubeVersion: 1.18.8
+      manifestGen: true
+    replicaCount: 1
+    softMultiTenancy:
+      enabled: false
+  wait: true
