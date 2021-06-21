@@ -46,3 +46,60 @@ spec:
     softMultiTenancy:
       enabled: false
   wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: ceph-provisioners
+  name: ceph-provisioners
+spec:
+  chart:
+    name: ceph-provisioners
+    repository: https://openinfradev.github.io/hanu-helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: ceph-provisioners
+  targetNamespace: openstack
+  values:
+    conf:
+      ceph:
+        global:
+          mon_host: TACO_MON_HOST
+    deployment:
+      ceph: false
+      cephfs_provisioner: false
+      client_secrets: true
+      rbd_provisioner: true
+    endpoints:
+      cluster_domain_suffix: siim-dev
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        ceph_bootstrap: deploy001:5000/openstackhelm/ceph-daemon:latest-ubuntu_xenial
+        ceph_cephfs_provisioner: deploy001:5000/openstackhelm/ceph-cephfs-provisioner:latest-ubuntu_xenial
+        ceph_config_helper: deploy001:5000/port/ceph-config-helper:v1.14.3
+        ceph_rbd_provisioner: deploy001:5000/openstackhelm/ceph-rbd-provisioner:latest-ubuntu_xenial
+        dep_check: deploy001:5000/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: deploy001:5000/docker:17.07.0
+    manifests:
+      configmap_bin: false
+      configmap_bin_common: false
+      configmap_etc: true
+      deployment_cephfs_provisioner: false
+      deployment_rbd_provisioner: false
+      helm_tests: false
+      job_bootstrap: false
+      job_cephfs_client_key: false
+      job_image_repo_sync: false
+      job_namespace_client_key: false
+      job_namespace_client_key_cleaner: false
+      storageclass_cephfs: false
+      storageclass_rbd: false
+    storageclass:
+      cephfs:
+        provision_storage_class: false
+      rbd:
+        provision_storage_class: true
+  wait: true

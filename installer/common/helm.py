@@ -1,4 +1,6 @@
 import yaml,os
+# from repo import Repo, RepoType
+
 
 class Helm:
   def __init__(self, repo, name, namespace, override):
@@ -19,12 +21,12 @@ class Helm:
   def autoApplyPrerequisitions(self):
     return True
 
-  def install(self):
-    self.repo.install(self.name, self.namespace, self.override)
+  def install(self, verbose=False):
+    self.repo.install(self.name, self.namespace, self.override, verbose)
 
-  def uninstall(self):
+  def uninstall(self, verbose=False):
     print('helm delete -n {} {} | grep status'
-      .format(self.namespace, self.name))
+      .format(self.namespace, self.name, verbose))
 
   def getStatus(self):
     stream = os.popen('helm status -n {} {}'
@@ -51,12 +53,11 @@ class Helm:
     splitcmd = "awk '{f=\""+target+"/_\" NR; print $0 > f}' RS='\n---\n' "+target+genfile
 
     os.system(splitcmd)
-    os.system('ls -al {0}; rm {0}{1}'.format(target,genfile))
+    os.system('rm {0}{1}'.format(target,genfile))
     
     if verbose:
       print('(DEBUG) rename resource yaml files')
     for entry in os.scandir(target):
-      print(entry)
       refinedname =''
       with open(entry, 'r') as stream:
         try:
@@ -86,7 +87,7 @@ class Helm:
       os.system('mkdir -p {}/{}'.format(targetdir, name))
 
       if verbose:
-        print('(DEBUG) gernerat a template file')
+        print('(DEBUG) gernerate a template file')
 
       if name.endswith('-operator'):
         os.system('helm template -n {0} {1} monstarrepo/{2} --version {3} -f vo --include-crds  > {4}/{1}.plain.yaml'
@@ -133,6 +134,6 @@ class Helm:
 
       os.system('rm -rf temporary-clone')
     else:
-      print('GIT CLONE and apply')
-      print(self.getUrl())
-      print(self.repotype)
+      print('(WARN) I CANNOT APPLY THIS. (email me - usnexp@gmail)')
+      print('(WARN) '+self.getUrl())
+      print('(WARN) '+self.repotype)

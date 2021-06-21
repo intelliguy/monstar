@@ -52,22 +52,15 @@ class Repo:
     if self.repotype == RepoType.GIT and self.repo.startswith('git@'):
       return self.repo.replace(':','/').replace('git@','https://')+'.git'
     else:
-      return repo
+      return None
 
   def getBase(self):
     if self.repotype == RepoType.GIT and self.repo.startswith('git@'):
       return self.repo.replace(':','/').replace('git@','https://')+'.git'
     else:
       return None
-  # def gitclone(self):
-  
-  # def cleangit(self):
 
-  # def preparerepo(self):
-
-  # def clearrepo(self):
-
-  def install(self, name, namespace, override):
+  def install(self, name, namespace, override, verbose=False ):
     yaml.dump(override, open('vo', 'w') , default_flow_style=False)
     print('[install {} from {} as {} in {}]'.
       format(self.chart(), self.repository(), name, namespace))
@@ -78,8 +71,38 @@ class Repo:
       os.system('helm install -n {0} {1} monstarrepo/{2} --version {3} -f vo'
         .format(namespace, name, self.chart(), self.version()))
       os.system('helm repo rm monstarrepo | grep -i error')
+    elif self.repotype == RepoType.GIT:
+      # prepare repository
+      if verbose:
+        print('(DEBUG) git clone -b {0} {1} .temporary-clone'.format(self.versionOrReference, self.repo))
+        os.system('git clone -b {0} {1} .temporary-clone'
+          .format(self.versionOrReference, self.repo))
+      else:
+        os.system('git clone -b {0} {1} .temporary-clone </dev/null 2>t; cat t | grep fatal; rm t'
+          .format(self.versionOrReference, self.repo))
+
+      # generate template file
+      if verbose:
+        print('(DEBUG) install helm')
+        print('(DEBUG) helm install -n {0} {1} .temporary-clone/{2} -f vo'
+          .format(namespace, name, self.chartOrPath))
+      # helm dependency update argo-helm/charts/argo-cd 
+      os.system('helm dependency update .temporary-clone/{}'.format(self.chartOrPath))
+
+      if name.endswith('-operator'):
+        os.system('helm install -n {0} {1} .temporary-clone/{2} -f vo --include-crds'
+          .format(namespace, name, self.chartOrPath))
+      else:
+        os.system('helm install -n {0} {1} .temporary-clone/{2} -f vo'
+          .format(namespace, name, self.chartOrPath))
+
+      # clean reposiotry
+      os.system('rm -rf .temporary-clone')
     else:
-      print('GIT CLONE and apply')
+      print('(WARN) I CANNOT APPLY THIS. (email me - usnexp@gmail)')
+      print('(WARN) '+self.getUrl())
+      print('(WARN) '+self.repotype)
+    return (name+'.plain.yaml')
 
   def template(self, name, namespace, override):
     yaml.dump(self.override, open('vo', 'w') , default_flow_style=False)
@@ -153,9 +176,9 @@ class Repo:
 
       os.system('rm -rf .temporary-clone')
     else:
-      print('GIT CLONE and apply')
-      print(self.getUrl())
-      print(self.repotype)
+      print('(WARN) I CANNOT APPLY THIS. (email me - usnexp@gmail)')
+      print('(WARN) '+self.getUrl())
+      print('(WARN) '+self.repotype)
 
   def genTemplateFile(self, name, namespace, override, verbose=False):
     yaml.dump(override, open('vo', 'w') , default_flow_style=False)
@@ -182,31 +205,29 @@ class Repo:
     elif self.repotype == RepoType.GIT:
       # prepare repository
       if verbose:
-        print('> git clone -b {0} {1} .temporary-clone'.format(self.versionOrReference, self.getUrl()))
+        print('git clone -b {0} {1} .temporary-clone'.format(self.versionOrReference, self.getUrl()))
         os.system('git clone -b {0} {1} .temporary-clone'
           .format(self.reference(), self.getUrl()))
       else:
         os.system('git clone -b {0} {1} .temporary-clone </dev/null 2>t; cat t | grep fatal; rm t'
           .format(self.versionOrReference, self.getUrl()))
 
-      print('helm template -n {0} {1} .temporary-clone/{2} -f vo > {1}.plain.yaml'
-        .format(namespace, name, self.chart()))
       # generate template file
       if verbose:
         print('(DEBUG) gernerat a template file')
+        print('(DEBUG) helm template -n {0} {1} .temporary-clone/{2} -f vo > {1}.plain.yaml'
+          .format(namespace, name, self.chart()))
       if name.endswith('-operator'):
         os.system('helm template -n {0} {1} .temporary-clone/{2} -f vo --include-crds  > {1}.plain.yaml'
           .format(namespace, name, self.path()))
       else:
-        print('helm template -n {0} {1} .temporary-clone/{2} -f vo > {1}.plain.yaml'
-          .format(namespace, name, self.chart()))
         os.system('helm template -n {0} {1} .temporary-clone/{2} -f vo > {1}.plain.yaml'
           .format(namespace, name, self.chart()))
 
       # clean reposiotry
       os.system('rm -rf .temporary-clone')
     else:
-      print('GIT CLONE and apply')
-      print(self.getUrl())
-      print(self.repotype)
+      print('(WARN) I CANNOT APPLY THIS. (email me - usnexp@gmail)')
+      print('(WARN) '+self.getUrl())
+      print('(WARN) '+self.repotype)
     return (name+'.plain.yaml')

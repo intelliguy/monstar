@@ -19,7 +19,7 @@ def install_and_check_done(manifests, install, config, verbose=False):
     cinterval=10
   pending = []
   for chart in install:
-    manifests[chart].install()
+    manifests[chart].install(verbose)
     pending.append(chart)
 
   while True:
@@ -47,7 +47,16 @@ def load_manifest(manifest):
       with open(entry, 'r') as stream:
         try:
           parsed = yaml.safe_load(stream)
-          if parsed['spec']['chart'].get('git')!=None:
+          if parsed['spec']['chart'].get('type')!=None:
+            repotype = RepoType.HELMREPO
+            if parsed['spec']['chart'].get('type')=='git':
+              repotype = RepoType.GIT
+            repo = Repo(
+              repotype,
+              parsed['spec']['chart']['repository'],
+              parsed['spec']['chart']['name'],
+              parsed['spec']['chart']['version'])
+          elif parsed['spec']['chart'].get('git')!=None:
             repo = Repo(
               # repotype, repo, chartOrPath, versionOrReference):
               RepoType.GIT,
@@ -72,13 +81,17 @@ def load_manifest(manifest):
             parsed['spec']['values'])
         except yaml.YAMLError as exc:
           print(exc)
+        except TypeError as exc:
+          print(exc)
   os.system("rm  split_*")
 
   return manifests
 
 def printhelp():
   print(('''
-    Usage:{0} -m APP_MANIFEST [-w WORK_FOLW_NAME] [-v VERBOSE_LEVEL] [-t] [-o OUTPUT_DIR_FOR_YAMLS]
+    Usage:{0} -m APP_MANIFEST [-w WORK_FOLW_NAME] [-v] [-t] [-o OUTPUT_DIR_FOR_YAMLS]
+     -v verbos mode
+     -t generate specific resources to OUTPUT_DIR_FOR_YAMLS
     Examples:
      - {0} -m lma_manifest.yaml -w fed -v
      - {0} -m lma_manifest.yaml -t -o gen

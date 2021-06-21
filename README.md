@@ -8,6 +8,17 @@
 - storage with the right storage class name
 - python3
 
+## Features
+- install a group of application with a menifest file 
+ - support types: armada, helmrelease (fluxcd), decapod (TACO)
+ - main purpose: install Logging/Monitoring/Alerting (Monstar) softwares
+- install exporters
+ - node-exporter, k8s-exporter, ceph-exporter, ....
+- register monitoring features for your applications based on http(s), grpc,...
+- change configuration to collect (in case of using the [hanu-reference](https://github.com/openinfradev/decapod-site/tree/main/hanu-reference))
+ - logs
+ - metrics
+
 ## Configuration
 - 
 
@@ -32,5 +43,3 @@ Using example
 > sed -i ’s/cluster.local/[YOUR_CLUSTER_NAME]/g’ lma-manifest.yaml
 > ./intaller-linux -m lma-manifest.yaml
 ```
-
-

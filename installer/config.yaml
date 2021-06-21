@@ -91,6 +91,14 @@ workflow:
     - kiali-operator
     - service-mesh-controlplane
     - service-mesh-gateway
+  argo:
+    1:
+    - argo-cd
+    # - argo-events
+    - argo-rollouts
+    - argo-workflows
+    # - argo-applicationset
+    # - argo-notifications
   test:
     1:
       - istio-operator
