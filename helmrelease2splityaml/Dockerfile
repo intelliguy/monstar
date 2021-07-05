@@ -7,4 +7,4 @@ COPY artifact/helm /usr/local/bin
 COPY helmrelease2splityaml/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 
-ENTRYPOINT [ "/installer/install-hr" ]
+ENTRYPOINT [ "/installer/template" ]

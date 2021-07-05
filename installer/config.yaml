@@ -10,6 +10,7 @@ workflow:
     - eck-operator
     - fluentbit-operator
     2:
+    - thanos-config
     - eck-resource
     - prometheus
     - kube-state-metrics
@@ -21,7 +22,6 @@ workflow:
     3:
     - prometheus-fed-master
     - fluentbit
-    - fed-addons
     - grafana
   lma_alone:
     1:
@@ -40,7 +40,6 @@ workflow:
     3:
     - prometheus-fed-master
     - fluentbit
-    - fed-addons
     - grafana
   cloudconsole:
 
@@ -62,7 +61,6 @@ workflow:
     - thanos
     3:
     - fluentbit
-    - fed-addons
     - grafana
   openstack:
     0:
@@ -101,6 +99,8 @@ workflow:
     # - argo-notifications
   test:
     1:
-      - istio-operator
+    - istio-operator
     2: 
-      - eck-operator
+    - eck-operator
+    3:
+    - prometheus-operator

@@ -1,17 +1,14 @@
-#!/usr/local/bin/python3
 from applib.helm import Helm
 from applib.repo import Repo, RepoType
 import sys, yaml, os, time, getopt
 
-TEMPDIR="tmp"
-
 def template_yaml(manifests, gdir='cd', verbose=False):
   for chart in manifests.keys():
-    if verbose:
+    if verbose>0:
       print('(DEBUG) Generate resource yamls from {}'.format(chart))
     manifests[chart].toSeperatedResources(gdir, verbose)
 
-def install_and_check_done(manifests, install, config, verbose=False):
+def install_and_check_done(manifests, install, config, verbose=False, kubeconfig='~/.kube/config'):
   # os.system("helm install -n monstar {} monstarrepo/{} -f vo".format())
   try:
     cinterval=int(config['metadata']['checkInterval'])
@@ -19,7 +16,7 @@ def install_and_check_done(manifests, install, config, verbose=False):
     cinterval=10
   pending = []
   for chart in install:
-    manifests[chart].install(verbose)
+    manifests[chart].install(verbose,kubeconfig)
     pending.append(chart)
 
   while True:
@@ -30,7 +27,7 @@ def install_and_check_done(manifests, install, config, verbose=False):
 
     for chart in successed:
       pending.remove(chart)
-  
+
     print("\nWaiting for finish: ")
     print(pending)
     if not pending:
@@ -86,68 +83,3 @@ def load_manifest(manifest):
   os.system("rm  split_*")
 
   return manifests
-
-def printhelp():
-  print(('''
-    Usage:{0} -m APP_MANIFEST [-w WORK_FOLW_NAME] [-v] [-t] [-o OUTPUT_DIR_FOR_YAMLS] [-k KUBE_CONFIG]
-     -v verbos mode
-     -t generate specific resources to OUTPUT_DIR_FOR_YAMLS
-     -k --kubeconfig=KUBE_CONFIG necessary to access your k8s cluster
-     -o --output=OUTPUT_DIR_FOR_YAMLS
-    Examples:
-     - {0} -m lma_manifest.yaml -w fed -v
-     - {0} -m lma_manifest.yaml -t -o gen
-    ''').format(sys.argv[0]))
-
-def main(argv):
-  manifest=''
-  wf='default'
-  decapod_splited_yamls=False
-  verbose=False
-  out_dir='cd'
-
-  try:
-    opts, args = getopt.getopt(argv,"htm:w:vo:",["manifest=","workflow=","verbose","output="])
-  except getopt.GetoptError:
-    printhelp()
-    sys.exit(-1)
-  
-  for opt, arg in opts:
-    if opt == '-h':
-      printhelp()
-      sys.exit(0)
-    elif opt == '-t':
-      decapod_splited_yamls=True
-    elif opt in ("-m", "--manifest"):
-      manifest = arg
-    elif opt in ("-w", "--workflow"):
-      wf = arg
-    elif opt in ("-v", "--verbose"):
-      verbose=True
-    elif opt in ("-o", "--output"):
-      out_dir = arg
-
-  if (manifest==''):
-    printhelp()
-    sys.exit(-1)
-
-  try:
-    manifests=load_manifest(manifest)
-    if verbose:
-      print('(DEBUG) loaded manifest:',manifests)
-      for key in manifests.keys():
-        print(key, manifests[key])
-
-    if decapod_splited_yamls:
-      template_yaml(manifests, out_dir, verbose)
-    else:
-      config = yaml.safe_load(open('config.yaml','r'))
-
-      for key in config['workflow'][wf].keys():
-        install_and_check_done(manifests,config['workflow'][wf][key],config, verbose)      
-
-  except yaml.YAMLError as exc:
-    print(exc)
-
-if __name__ == "__main__":
-  main(sys.argv[1:])

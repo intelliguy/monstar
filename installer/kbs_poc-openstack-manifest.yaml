@@ -1,0 +1,1332 @@
+
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: ceph-provisioners
+  name: ceph-provisioners
+spec:
+  chart:
+    name: ceph-provisioners
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: ceph-provisioners
+  targetNamespace: openstack
+  values:
+    conf:
+      ceph:
+        global:
+          mon_host: 10.39.12.106,10.39.12.107,10.39.12.108
+    deployment:
+      ceph: false
+      cephfs_provisioner: false
+      client_secrets: true
+      rbd_provisioner: true
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        ceph_bootstrap: openstackhelm/ceph-daemon:ubuntu_bionic-20200217
+        ceph_cephfs_provisioner: openstackhelm/ceph-cephfs-provisioner:ubuntu_bionic-20200217
+        ceph_config_helper: sktdev/ceph-config-helper:v1.16.8
+        ceph_rbd_provisioner: openstackhelm/ceph-rbd-provisioner:ubuntu_bionic-20200217
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+    manifests:
+      configmap_bin: false
+      configmap_bin_common: false
+      configmap_etc: true
+      deployment_cephfs_provisioner: false
+      deployment_rbd_provisioner: false
+      helm_tests: false
+      job_bootstrap: false
+      job_cephfs_client_key: false
+      job_image_repo_sync: false
+      job_namespace_client_key: false
+      job_namespace_client_key_cleaner: false
+      storageclass_cephfs: false
+      storageclass_rbd: false
+    storageclass:
+      cephfs:
+        provision_storage_class: false
+      rbd:
+        provision_storage_class: false
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: cinder
+  name: cinder
+spec:
+  chart:
+    name: cinder
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.1
+  helmVersion: v3
+  releaseName: cinder
+  targetNamespace: openstack
+  values:
+    conf:
+      backends:
+        rbd1:
+          rbd_pool: volumes
+          rbd_secret_uuid: 503d71fa-6f4d-491b-9fc0-fff9aff83d9f
+      ceph:
+        admin_keyring: AQC4leVgrIVDOxAArOC/DViqccF1J5YxZioEFA==
+        enabled: "false"
+        pools:
+          volumes:
+            app_name: cinder-volume
+            chunk_size: 128
+            crush_rule: replicated_rule
+            replication: 3
+      cinder:
+        DEFAULT:
+          backup_ceph_pool: backups
+          backup_ceph_user: cinder
+          backup_driver: cinder.backup.drivers.ceph.CephBackupDriver
+          debug: true
+          default_volume_type: rbd
+          enabled_backends: rbd
+      logging:
+        logger_cinder:
+          level: DEBUG
+        logger_oslo_service:
+          handlers: stderr
+          level: DEBUG
+          qualname: oslo_service
+        loggers:
+          keys:
+          - root
+          - cinder
+          - oslo_service
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      identity:
+        auth:
+          admin:
+            password: password
+            username: admin
+          cinder:
+            password: password
+            username: cinder
+      oslo_db:
+        auth:
+          admin:
+            password: password
+            username: root
+          cinder:
+            password: password
+            username: cinder
+      oslo_messaging:
+        auth:
+          admin:
+            password: password
+            username: rabbitmq
+          cinder:
+            password: password
+            username: cinder
+      volume:
+        path:
+          default: /v2/%(tenant_id)s
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        bootstrap: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        cinder_api: sktdev/ubuntu-source-cinder-api-stein:taco-v20.05
+        cinder_backup: sktdev/ubuntu-source-cinder-backup-stein:taco-v20.05
+        cinder_backup_storage_init: sktdev/ceph-config-helper:v1.16.8
+        cinder_db_sync: sktdev/ubuntu-source-cinder-api-stein:taco-v20.05
+        cinder_scheduler: sktdev/ubuntu-source-cinder-scheduler-stein:taco-v20.05
+        cinder_storage_init: sktdev/ceph-config-helper:v1.16.8
+        cinder_volume: sktdev/ubuntu-source-cinder-volume-stein:taco-v20.05
+        cinder_volume_usage_audit: sktdev/ubuntu-source-cinder-volume-stein:taco-v20.05
+        db_drop: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_init: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        ks_endpoints: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_service: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_user: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        rabbit_init: rabbitmq:3.7-management
+        test: xrally/xrally-openstack:1.5.0
+    pod:
+      replicas:
+        api: 3
+        backup: 1
+        scheduler: 3
+        volume: 1
+      security_context:
+        cinder:
+          pod:
+            runAsUser: 42407
+        cinder_api:
+          pod:
+            runAsUser: 42407
+        cinder_backup:
+          pod:
+            runAsUser: 42407
+        cinder_scheduler:
+          pod:
+            runAsUser: 42407
+        cinder_volume:
+          pod:
+            runAsUser: 42407
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: glance
+  name: glance
+spec:
+  chart:
+    name: glance
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: glance
+  targetNamespace: openstack
+  values:
+    bootstrap:
+      enabled: true
+      structured:
+        images:
+          cirros:
+            id: 201084fc-c276-4744-8504-cb974dbb3610
+            image_file: cirros-0.5.1-x86_64-disk.img
+            name: Cirros 0.5.1 64-bit
+            private: false
+            source_url: https://download.cirros-cloud.net/0.5.1/
+    conf:
+      ceph:
+        admin_keyring: AQC4leVgrIVDOxAArOC/DViqccF1J5YxZioEFA==
+        enabled: true
+      glance:
+        DEFAULT:
+          hw_disk_bus: scsi
+          hw_qemu_guest_agent: true
+          hw_scsi_model: virtio-scsi
+          os_require_quiesce: true
+          show_image_direct_url: true
+          show_multiple_locations: true
+        glance_store:
+          rbd_store_pool: images
+          rbd_store_replication: 3
+          rbd_store_user: glance
+      logging:
+        logger_glance:
+          level: DEBUG
+      rally_tests:
+        run_tempest: false
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      identity:
+        auth:
+          admin:
+            password: password
+            username: admin
+          glance:
+            password: password
+            username: glance
+      oslo_db:
+        auth:
+          admin:
+            password: password
+            username: root
+          glance:
+            password: password
+            username: glance
+      oslo_messaging:
+        auth:
+          admin:
+            password: password
+            username: rabbitmq
+          glance:
+            password: password
+            username: glance
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        bootstrap: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_drop: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_init: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        glance_api: sktdev/ubuntu-source-glance-api-stein:taco-v20.05
+        glance_db_sync: sktdev/ubuntu-source-glance-api-stein:taco-v20.05
+        glance_metadefs_load: sktdev/ubuntu-source-glance-api-stein:taco-v20.05
+        glance_registry: sktdev/ubuntu-source-glance-registry-stein:taco-v20.05
+        glance_storage_init: sktdev/ceph-config-helper:v1.16.8
+        image_repo_sync: docker:17.07.0
+        ks_endpoints: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_service: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_user: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        rabbit_init: rabbitmq:3.7-management
+        test: xrally/xrally-openstack:1.5.0
+    manifests:
+      pod_rally_test: false
+    network:
+      api:
+        ingress:
+          annotations:
+            nginx.ingress.kubernetes.io/proxy-body-size: 102400M
+    pod:
+      replicas:
+        api: 3
+        registry: 1
+      security_context:
+        glance:
+          pod:
+            runAsUser: 42415
+    storage: rbd
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: heat
+  name: heat
+spec:
+  chart:
+    name: heat
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: heat
+  targetNamespace: openstack
+  values:
+    bootstrap:
+      enabled: true
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      identity:
+        auth:
+          admin:
+            password: password
+            username: admin
+          heat:
+            password: password
+            username: heat
+          heat_stack_user:
+            password: password
+            username: heat-domain
+          heat_trustee:
+            password: password
+            username: heat-trust
+      oslo_db:
+        auth:
+          admin:
+            password: password
+            username: root
+          heat:
+            password: password
+            username: heat
+      oslo_messaging:
+        auth:
+          admin:
+            password: password
+            username: rabbitmq
+          heat:
+            password: password
+            username: heat
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        bootstrap: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_drop: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_init: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        heat_api: sktdev/ubuntu-source-heat-api-stein:taco-v20.05
+        heat_cfn: sktdev/ubuntu-source-heat-api-stein:taco-v20.05
+        heat_cloudwatch: sktdev/ubuntu-source-heat-api-stein:taco-v20.05
+        heat_db_sync: sktdev/ubuntu-source-heat-api-stein:taco-v20.05
+        heat_engine: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        heat_engine_cleaner: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        heat_purge_deleted: openstackhelm/heat:ocata-ubuntu_xenial
+        image_repo_sync: docker:17.07.0
+        ks_endpoints: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_service: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_user: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        rabbit_init: rabbitmq:3.7-management
+        test: xrally/xrally-openstack:1.5.0
+    pod:
+      replicas:
+        api: 3
+        cfn: 3
+        cloudwatch: 3
+        engine: 3
+      security_context:
+        heat:
+          pod:
+            runAsUser: 42418
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: horizon
+  name: horizon
+spec:
+  chart:
+    name: horizon
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: horizon
+  targetNamespace: openstack
+  timeout: 30000
+  values:
+    conf:
+      horizon:
+        apache: |
+          Listen 0.0.0.0:{{ tuple "dashboard" "internal" "web" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}
+          LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" combined
+          LogFormat "%{X-Forwarded-For}i %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\"" proxy
+          SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+          CustomLog /dev/stdout combined env=!forwarded
+          CustomLog /dev/stdout proxy env=forwarded
+          <VirtualHost *:{{ tuple "dashboard" "internal" "web" . | include "helm-toolkit.endpoints.endpoint_port_lookup" }}>
+              WSGIScriptReloading On
+              WSGIDaemonProcess horizon-http processes=5 threads=1 user=horizon group=horizon display-name=%{GROUP} python-path=/var/lib/kolla/venv/lib/python2.7/site-packages
+              WSGIProcessGroup horizon-http
+              WSGIScriptAlias / /var/www/cgi-bin/horizon/django.wsgi
+              WSGIPassAuthorization On
+              RewriteEngine on
+              RewriteCond %{REQUEST_METHOD} !^(POST|PUT|GET|DELETE)
+              RewriteRule .* - [F]
+              <Location "/">
+                  Require all granted
+              </Location>
+              Alias /static /var/www/html/horizon
+              <Location "/static">
+                  SetHandler None
+              </Location>
+              <IfVersion >= 2.4>
+                ErrorLogFormat "%{cu}t %M"
+              </IfVersion>
+              ErrorLog /dev/stdout
+              TransferLog /dev/stdout
+              SetEnvIf X-Forwarded-For "^.*\..*\..*\..*" forwarded
+              CustomLog /dev/stdout combined env=!forwarded
+              CustomLog /dev/stdout proxy env=forwarded
+          </Virtualhost>
+        local_settings:
+          config:
+            openstack_neutron_network:
+              enable_distributed_router: "False"
+              enable_fip_topology_check: "True"
+              enable_firewall: "False"
+              enable_ha_router: "True"
+              enable_ipv6: "False"
+              enable_lb: "True"
+              enable_quotas: "True"
+              enable_router: "True"
+              enable_vpn: "False"
+      software:
+        apache2:
+          site_dir: /etc/apache2/sites-enabled
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      oslo_db:
+        auth:
+          admin:
+            password: password
+            username: root
+          horizon:
+            password: password
+            username: horizon
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        db_drop: sktdev/ubuntu-source-horizon-stein:taco-v20.05
+        db_init: sktdev/ubuntu-source-horizon-stein:taco-v20.05
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        horizon: sktdev/ubuntu-source-horizon-stein:taco-v20.05
+        horizon_db_sync: sktdev/ubuntu-source-horizon-stein:taco-v20.05
+        image_repo_sync: docker:17.07.0
+        test: openstackhelm/osh-selenium:latest-ubuntu_bionic
+    network:
+      node_port:
+        enabled: true
+        port: 31000
+    pod:
+      replicas:
+        server: 1
+      security_context:
+        horizon:
+          pod:
+            runAsUser: 42420
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: ingress
+  name: ingress
+spec:
+  chart:
+    name: ingress
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: ingress
+  targetNamespace: openstack
+  values:
+    conf:
+      ingress:
+        bind-address: 0.0.0.0
+    config:
+      worker-processes: 8
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      ingress:
+        port:
+          server:
+            default: 28080
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        entrypoint: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        error_pages: gcr.io/google-containers/defaultbackend:1.0
+        image_repo_sync: docker:17.07.0
+        ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.23.0
+        ingress_module_init: sktdev/ubuntu-source-neutron-server-stein:taco-v20.05
+        ingress_routed_vip: sktdev/ubuntu-source-neutron-server-stein:taco-v20.05
+        keepalived: osixia/keepalived:1.4.5
+    monitoring:
+      prometheus:
+        config:
+          worker-processes: 8
+        enabled: true
+        ingress_exporter:
+          scrape: true
+    network:
+      host_namespace: true
+      vip:
+        addr: 10.39.12.118/32
+        interface: ens3f1
+        keepalived_router_id: 49
+        manage: false
+        mode: keepalived
+    pod:
+      replicas:
+        error_page: 1
+        ingress: 3
+      security_context:
+        server:
+          container:
+            ingress_vip:
+              capabilities:
+                add: NET_ADMIN
+              readOnlyRootFilesystem: false
+              runAsUser: 0
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: keystone
+  name: keystone
+spec:
+  chart:
+    name: keystone
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: keystone
+  targetNamespace: openstack
+  values:
+    conf:
+      keystone:
+        DEFAULT:
+          debug: true
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      identity:
+        auth:
+          admin:
+            password: password
+            username: admin
+      oslo_db:
+        auth:
+          admin:
+            password: password
+            username: root
+          keystone:
+            password: password
+            username: keystone
+      oslo_messaging:
+        auth:
+          admin:
+            password: password
+            username: rabbitmq
+          keystone:
+            password: password
+            username: keystone
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        bootstrap: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_drop: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_init: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        keystone_api: sktdev/ubuntu-source-keystone-stein:taco-v20.05
+        keystone_credential_cleanup: openstackhelm/heat:ocata-ubuntu_xenial
+        keystone_credential_rotate: sktdev/ubuntu-source-keystone-stein:taco-v20.05
+        keystone_credential_setup: sktdev/ubuntu-source-keystone-stein:taco-v20.05
+        keystone_db_sync: sktdev/ubuntu-source-keystone-stein:taco-v20.05
+        keystone_domain_manage: sktdev/ubuntu-source-keystone-stein:taco-v20.05
+        keystone_fernet_rotate: sktdev/ubuntu-source-keystone-stein:taco-v20.05
+        keystone_fernet_setup: sktdev/ubuntu-source-keystone-stein:taco-v20.05
+        ks_user: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        rabbit_init: rabbitmq:3.7-management
+        test: xrally/xrally-openstack:1.5.0
+    pod:
+      probes:
+        api:
+          api:
+            liveness:
+              enabled: false
+            readiness:
+              enabled: false
+      replicas:
+        api: 1
+      security_context:
+        keystone:
+          pod:
+            runAsUser: 42425
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: libvirt
+  name: libvirt
+  schema: metadata/Document/v1
+spec:
+  chart:
+    name: libvirt
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: libvirt
+  targetNamespace: openstack
+  values:
+    conf:
+      ceph:
+        admin_keyring: AQC4leVgrIVDOxAArOC/DViqccF1J5YxZioEFA==
+        cinder:
+          keyring: AQAin8tU0CFgEhAATb7sYgtWsh+S5HEbg6MrGg==
+          secret_uuid: 503d71fa-6f4d-491b-9fc0-fff9aff83d9f
+          user: cinder
+        enabled: true
+      libvirt:
+        listen_addr: 0.0.0.0
+        log_level: 3
+    dependencies:
+      dynamic:
+        targeted:
+          onos:
+            libvirt: {}
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        libvirt: sktdev/ubuntu-source-nova-libvirt-stein:taco-v20.05
+    manifests:
+      configmap_bin: true
+      configmap_etc: true
+      daemonset_libvirt: true
+    network:
+      backend:
+      - openvswitch
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: mariadb
+  name: mariadb
+spec:
+  chart:
+    name: mariadb
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.1
+  helmVersion: v3
+  releaseName: mariadb
+  targetNamespace: openstack
+  values:
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      oslo_db:
+        auth:
+          admin:
+            password: password
+            username: root
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        error_pages: gcr.io/google-containers/defaultbackend:1.0
+        image_repo_sync: docker:17.07.0
+        ingress: quay.io/kubernetes-ingress-controller/nginx-ingress-controller:0.9.0
+        mariadb: openstackhelm/mariadb:10.2.18
+        mariadb_backup: openstackhelm/mariadb:ubuntu_xenial-20191031
+        prometheus_create_mysql_user: mariadb:10.2.13
+        prometheus_mysql_exporter: prom/mysqld-exporter:v0.10.0
+        prometheus_mysql_exporter_helm_tests: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        scripted_test: openstackhelm/mariadb:ubuntu_xenial-20191031
+    monitoring:
+      prometheus:
+        enabled: true
+        mysqld_exporter:
+          scrape: true
+    pod:
+      replicas:
+        server: 3
+    volume:
+      backup:
+        class_name: rbd
+        enabled: "false"
+        size: 10Gi
+      class_name: rbd
+      enabled: true
+      size: 40Gi
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: memcached
+  name: memcached
+spec:
+  chart:
+    name: memcached
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: memcached
+  targetNamespace: openstack
+  values:
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        memcached: memcached:1.5.5
+        prometheus_memcached_exporter: prom/memcached-exporter:v0.4.1
+    monitoring:
+      prometheus:
+        enabled: true
+        memcached_exporter:
+          scrape: true
+    pod:
+      replicas:
+        server: 3
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: neutron
+  name: neutron
+spec:
+  chart:
+    name: neutron
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: neutron
+  targetNamespace: openstack
+  values:
+    conf:
+      auto_bridge_add:
+        br-ex: ens3f5
+      neutron:
+        DEFAULT:
+          core_plugin: ml2
+          global_physnet_mtu: 9000
+          l3_ha: false
+          service_plugins: router
+        agent:
+          root_helper: sudo /var/lib/kolla/venv/bin/neutron-rootwrap /etc/neutron/rootwrap.conf
+          root_helper_daemon: sudo neutron-rootwrap-daemon /etc/neutron/rootwrap.conf
+        placement:
+          auth_type: password
+          auth_uri: http://keystone-api.openstack.svc.cluster.local:5000/v3
+          auth_url: http://keystone-api.openstack.svc.cluster.local:5000/v3
+          auth_version: v3
+          endpoint_type: internal
+          password: t0pNw8pN4Qs93p1InK7XWDLz8CH7a08KZ6ClafHC
+          project_domain_name: service
+          project_name: service
+          region_name: RegionOne
+          user_domain_name: service
+          username: nova
+      neutron_sudoers: |
+        # This sudoers file supports rootwrap-daemon for both Kolla and LOCI Images.
+        Defaults !requiretty
+        Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/var/lib/openstack/bin:/var/lib/kolla/venv/bin"
+        neutron ALL = (root) NOPASSWD: /var/lib/kolla/venv/bin/neutron-rootwrap /etc/neutron/rootwrap.conf *, /var/lib/openstack/bin/neutron-rootwrap /etc/neutron/rootwrap.conf *, /var/lib/kolla/venv/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf, /var/lib/openstack/bin/neutron-rootwrap-daemon /etc/neutron/rootwrap.conf, /var/lib/kolla/venv/bin/privsep-helper /etc/neutron/rootwrap.conf *
+      paste:
+        app:neutronversions:
+          paste:
+            app_factory: neutron.pecan_wsgi.app:versions_factory
+        composite:neutronapi_v2_0:
+          keystone: cors http_proxy_to_wsgi request_id catch_errors authtoken keystonecontext extensions neutronapiapp_v2_0
+      plugins:
+        linuxbridge_agent:
+          linux_bridge:
+            physical_interface_mappings: ""
+          securitygroup:
+            firewall_driver: iptables
+        ml2_conf:
+          ml2:
+            mechanism_drivers: openvswitch,l2population
+            tenant_network_types: vxlan
+            type_drivers: vlan, flat, vxlan
+          ml2_type_flat:
+            flat_networks: provider
+          ml2_type_vlan:
+            network_vlan_ranges: ""
+        openvswitch_agent:
+          agent:
+            arp_responder: true
+            enable_distributed_routing: false
+            l2_population: true
+            tunnel_types: vxlan
+          ovs:
+            bridge_mappings: provider:br-ex
+          securitygroup:
+            firewall_driver: openvswitch
+    dependencies:
+      dynamic:
+        targeted:
+          onos:
+            dhcp: {}
+            l3: {}
+            lb_agent: {}
+            metadata: {}
+      static:
+        ovs_agent: {}
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      identity:
+        auth:
+          admin:
+            password: password
+            username: admin
+          neutron:
+            password: password
+            username: neutron
+          nova:
+            password: password
+            username: nova
+        name: keystone
+      oslo_db:
+        auth:
+          admin:
+            password: password
+            username: root
+          neutron:
+            password: password
+            username: neutron
+      oslo_messaging:
+        auth:
+          admin:
+            password: password
+            username: rabbitmq
+          neutron:
+            password: password
+            username: neutron
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        bootstrap: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_drop: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_init: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        ks_endpoints: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_service: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_user: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        neutron_bagpipe_bgp: sktdev/ubuntu-source-neutron-server-stein:taco-v20.05
+        neutron_db_sync: sktdev/ubuntu-source-neutron-server-stein:taco-v20.05
+        neutron_dhcp: sktdev/ubuntu-source-neutron-dhcp-agent-stein:taco-v20.05
+        neutron_ironic_agent: sktdev/ubuntu-source-neutron-server-stein:taco-v20.05
+        neutron_l2gw: sktdev/ubuntu-source-neutron-server-stein:taco-v20.05
+        neutron_l3: sktdev/ubuntu-source-neutron-l3-agent-stein:taco-v20.05
+        neutron_linuxbridge_agent: sktdev/ubuntu-source-neutron-linuxbridge-agent-stein:taco-v20.05
+        neutron_metadata: sktdev/ubuntu-source-neutron-metadata-agent-stein:taco-v20.05
+        neutron_openvswitch_agent: sktdev/ubuntu-source-neutron-openvswitch-agent-stein:taco-v20.05
+        neutron_server: sktdev/ubuntu-source-neutron-server-stein:taco-v20.05
+        neutron_sriov_agent: sktdev/ubuntu-source-neutron-sriov-agent:taco-v20.05
+        neutron_sriov_agent_init: sktdev/ubuntu-source-neutron-sriov-agent:taco-v20.05
+        purge_test: openstackhelm/ospurge:latest
+        rabbit_init: rabbitmq:3.7-management
+        test: xrally/xrally-openstack:1.5.0
+        neutron_netns_cleanup_cron: sktdev/ubuntu-source-neutron-server-stein:taco-v20.05
+    labels:
+      agent:
+        dhcp:
+          node_selector_value: disabled
+        l3:
+          node_selector_value: disabled
+        metadata:
+          node_selector_value: disabled
+      lb:
+        node_selector_value: disabled
+      ovs:
+        node_selector_value: enabled
+    manifests:
+      daemonset_dhcp_agent: false
+      daemonset_l3_agent: false
+      daemonset_lb_agent: false
+      daemonset_metadata_agent: false
+      daemonset_ovs_agent: true
+      daemonset_sriov_agent: false
+    network:
+      backend:
+      - openvswitch
+      interface:
+        tunnel: ens3f2
+      server:
+        node_port:
+          enabled: true
+          port: 30096
+      share_namespaces: true
+    pod:
+      probes:
+        dhcp_agent:
+          dhcp_agent:
+            liveness:
+              enabled: false
+            readiness:
+              enabled: false
+        l3_agent:
+          l3_agent:
+            liveness:
+              enabled: false
+            readiness:
+              enabled: false
+        metadata_agent:
+          metadata_agent:
+            liveness:
+              enabled: false
+            readiness:
+              enabled: false
+        ovs_agent:
+          ovs_agent:
+            liveness:
+              enabled: true
+        sriov_agent:
+          sriov_agent:
+            readiness:
+              enabled: false
+      replicas:
+        server: 3
+      security_context:
+        neutron:
+          pod:
+            runAsUser: 42435
+        neutron_bagpipe_bgp:
+          pod:
+            runAsUser: 42435
+        neutron_dhcp_agent:
+          container:
+            neutron_dhcp_agent:
+              readOnlyRootFilesystem: false
+          pod:
+            runAsUser: 42435
+        neutron_l2gw_agent:
+          pod:
+            runAsUser: 42435
+        neutron_l3_agent:
+          container:
+            neutron_l3_agent:
+              readOnlyRootFilesystem: false
+          pod:
+            runAsUser: 42435
+        neutron_lb_agent:
+          container:
+            neutron_lb_agent:
+              readOnlyRootFilesystem: false
+          pod:
+            runAsUser: 42435
+        neutron_metadata_agent:
+          pod:
+            runAsUser: 42435
+        neutron_ovs_agent:
+          pod:
+            runAsUser: 42435
+        neutron_server:
+          container:
+            neutron_server:
+              readOnlyRootFilesystem: false
+          pod:
+            runAsUser: 42435
+        neutron_sriov_agent:
+          pod:
+            runAsUser: 42435
+      user:
+        neutron:
+          uid: 42435
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: nova
+  name: nova
+spec:
+  chart:
+    name: nova
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: nova
+  targetNamespace: openstack
+  timeout: 30000
+  values:
+    bootstrap:
+      structured:
+        flavors:
+          enabled: true
+          options:
+            m1_tiny:
+              id: 0c84e220-a258-439f-a6ff-f8e9fd980025
+    conf:
+      ceph:
+        admin_keyring: AQC4leVgrIVDOxAArOC/DViqccF1J5YxZioEFA==
+        cinder:
+          keyring: AQAin8tU0CFgEhAATb7sYgtWsh+S5HEbg6MrGg==
+          user: cinder
+        enabled: true
+      hypervisor:
+        host_interface: ens3f2
+      libvirt:
+        live_migration_interface: ens3f2
+      logging:
+        logger_nova:
+          level: DEBUG
+      nova:
+        DEFAULT:
+          config_drive_cdrom: true
+          config_drive_format: iso9660
+          cpu_allocation_ratio: 8
+          debug: true
+          dhcp_domain: ""
+          disk_allocation_ratio: 9999
+          force_config_drive: true
+          osapi_compute_workers: 8
+          ram_allocation_ratio: 0.8
+          scheduler_default_filters: RetryFilter,AvailabilityZoneFilter,RamFilter,ComputeFilter,ComputeCapabilitiesFilter,ImagePropertiesFilter,ServerGroupAntiAffinityFilter,ServerGroupAffinityFilter
+        libvirt:
+          images_type: rbd
+          rbd_secret_uuid: 503d71fa-6f4d-491b-9fc0-fff9aff83d9f
+          rbd_user: cinder
+          virt_type: kvm
+        placement:
+          region_name: RegionOne
+        placement_database:
+          max_retries: -1
+          sync_on_startup: true
+        scheduler:
+          discover_hosts_in_cells_interval: 60
+        vnc:
+          novncproxy_base_url: http://10.39.12.111:30608/vnc_auto.html
+    console:
+      novnc:
+        compute:
+          vncserver_proxyclient_interface: ens3f1
+        vncproxy:
+          vncserver_proxyclient_interface: ens3f1
+    dependencies:
+      dynamic:
+        targeted:
+          onos:
+            compute: {}
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      identity:
+        auth:
+          admin:
+            password: password
+            username: admin
+          ironic:
+            password: password
+            username: ironic
+          neutron:
+            password: password
+            username: neutron
+          nova:
+            password: password
+            username: nova
+          placement:
+            password: password
+            username: placement
+      oslo_db:
+        auth:
+          admin:
+            password: password
+            username: root
+          nova:
+            password: password
+            username: nova
+      oslo_db_api:
+        auth:
+          admin:
+            password: password
+            username: root
+          nova:
+            password: password
+            username: nova
+      oslo_db_cell0:
+        auth:
+          admin:
+            password: password
+            username: root
+          nova:
+            password: password
+            username: nova
+      oslo_messaging:
+        auth:
+          admin:
+            password: password
+            username: rabbitmq
+          nova:
+            password: password
+            username: nova
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        bootstrap: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_drop: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        db_init: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        ks_endpoints: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_service: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        ks_user: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        nova_api: sktdev/ubuntu-source-nova-api-stein:taco-v20.05
+        nova_cell_setup: sktdev/ubuntu-source-nova-api-stein:taco-v20.05
+        nova_cell_setup_init: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        nova_compute: sktdev/ubuntu-source-nova-compute-stein:taco-v20.05
+        nova_compute_ironic: sktdev/ubuntu-source-nova-compute-ironic-stein:taco-v20.05
+        nova_compute_ssh:  sktdev/ubuntu-source-nova-ssh-stein:taco-v20.05
+        nova_conductor: sktdev/ubuntu-source-nova-conductor-stein:taco-v20.05
+        nova_consoleauth: sktdev/ubuntu-source-nova-consoleauth-stein:taco-v20.05
+        nova_db_sync: sktdev/ubuntu-source-nova-api-stein:taco-v20.05
+        nova_novncproxy: sktdev/ubuntu-source-nova-novncproxy-stein:taco-v20.05
+        nova_novncproxy_assets: sktdev/ubuntu-source-nova-novncproxy-stein:taco-v20.05
+        nova_placement: sktdev/ubuntu-source-nova-placement-api-stein:taco-v20.05
+        nova_scheduler: sktdev/ubuntu-source-nova-scheduler-stein:taco-v20.05
+        nova_service_cleaner: sktdev/ceph-config-helper:v1.16.8
+        nova_spiceproxy: sktdev/ubuntu-source-nova-spicehtml5proxy-stein:taco-v20.05
+        nova_spiceproxy_assets: sktdev/ubuntu-source-nova-spicehtml5proxy-stein:taco-v20.05
+        rabbit_init: rabbitmq:3.7-management
+        test: xrally/xrally-openstack:1.5.0
+    labels:
+      agent:
+        compute_ironic:
+          node_selector_key: openstack-control-plane
+          node_selector_value: enabled
+    manifests:
+      statefulset_compute_ironic: false
+    network:
+      backend:
+      - openvswitch
+      novncproxy:
+        name: nova-novncproxy
+        node_port:
+          enabled: true
+          port: 30608
+        port: 6080
+        targetPort: 6080
+    pod:
+      mandatory_access_control: {}
+      replicas:
+        api_metadata: 3
+        conductor: 3
+        consoleauth: 3
+        novncproxy: 3
+        osapi: 3
+        placement: 3
+        scheduler: 3
+      security_context:
+        nova:
+          pod:
+            runAsUser: 42436
+      user:
+        nova:
+          uid: 42436
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: openvswitch
+  name: openvswitch
+spec:
+  chart:
+    name: openvswitch
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  releaseName: openvswitch
+  targetNamespace: openstack
+  values:
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        openvswitch_db_server: kolla/ubuntu-source-openvswitch-db-server:8.0.3
+        openvswitch_vswitchd: kolla/ubuntu-source-openvswitch-vswitchd:8.0.3
+    pod:
+      security_context:
+        openvswitch_db_server:
+          container:
+            server:
+              runAsUser: 0
+          pod:
+            runAsUser: 0
+      user:
+        nova:
+          uid: 42436
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: prometheus-openstack-exporter
+  name: prometheus-openstack-exporter
+spec:
+  chart:
+    name: prometheus-openstack-exporter
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: prometheus-openstack-exporter
+  targetNamespace: openstack
+  values:
+    dummy: dummy
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      identity:
+        auth:
+          admin:
+            password: password
+            project_domain_name: default
+            project_name: admin
+            region_name: RegionOne
+            user_domain_name: default
+            username: admin
+          user:
+            password: password
+            project_domain_name: default
+            project_name: service
+            region_name: RegionOne
+            role: admin
+            user_domain_name: default
+            username: prometheus-openstack-exporter
+        name: keystone
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        ks_user: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        prometheus_openstack_exporter:  openstackhelm/prometheus-openstack-exporter:ubuntu_bionic-20191017
+    pod:
+      mandatory_access_control: {}
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: rabbitmq
+  name: rabbitmq
+spec:
+  chart:
+    name: rabbitmq
+    repository: https://openinfradev.github.io/helm-repo/
+    skipDepUpdate: true
+    version: 0.1.0
+  helmVersion: v3
+  releaseName: rabbitmq
+  targetNamespace: openstack
+  values:
+    endpoints:
+      cluster_domain_suffix: kbs-poc.castera.io
+      oslo_messaging:
+        auth:
+          user:
+            password: password
+            username: rabbitmq
+    images:
+      pull_policy: IfNotPresent
+      tags:
+        dep_check: quay.io/airshipit/kubernetes-entrypoint:v1.0.0
+        image_repo_sync: docker:17.07.0
+        prometheus_rabbitmq_exporter: kbudde/rabbitmq-exporter:v0.21.0
+        prometheus_rabbitmq_exporter_helm_tests: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        rabbitmq: rabbitmq:3.7.13
+        rabbitmq_init: sktdev/ubuntu-source-heat-engine-stein:taco-v20.05
+        scripted_test: rabbitmq:3.7.13-management
+    monitoring:
+      prometheus:
+        enabled: true
+        rabbitmq_exporter:
+          scrape: true
+    pod:
+      replicas:
+        server: 3
+    volume:
+      chown_on_start: true
+      class_name: rbd
+      enabled: true
+      size: 512Mi
+      use_local_path:
+        enabled: false
+        host_path: /ssd-data/rabbitmq-data
+  wait: true
+

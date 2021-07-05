@@ -6,6 +6,7 @@ metadata:
   name: istio-operator
 spec:
   chart:
+    type: helmrepo
     name: istio-operator
     repository: https://openinfradev.github.io/helm-repo
     version: 1.7.0
@@ -28,9 +29,10 @@ spec:
     # git: git@github.com:fluxcd/flux-get-started
     # ref: master
     # path: charts/ghost
-    git: git@github.com:openinfradev/helm-charts
-    ref: enabled-dashboard
-    path: elasticsearch-operator
+    type: git
+    repository: git@github.com:openinfradev/helm-charts
+    version: main
+    name: elasticsearch-operator
   helmVersion: v3
   releaseName: eck-operator
   targetNamespace: elastic-system
@@ -55,8 +57,9 @@ metadata:
   name: ceph-provisioners
 spec:
   chart:
+    type: helmrepo
     name: ceph-provisioners
-    repository: https://openinfradev.github.io/hanu-helm-repo/
+    repository: https://openinfradev.github.io/helm-repo
     skipDepUpdate: true
     version: 0.1.0
   helmVersion: v3
@@ -102,4 +105,61 @@ spec:
         provision_storage_class: false
       rbd:
         provision_storage_class: true
+  wait: true
+---
+apiVersion: helm.fluxcd.io/v1
+kind: HelmRelease
+metadata:
+  labels:
+    name: prometheus-operator
+  name: prometheus-operator
+spec:
+  chart:
+    type: git
+    repository: git@github.com:prometheus-community/helm-charts
+    name: charts/kube-prometheus-stack
+    version: main
+  helmVersion: v3
+  releaseName: prometheus-operator
+  targetNamespace: lma
+  values:
+    alertmanager:
+      enabled: false
+    coreDns:
+      enabled: false
+    defaultRules:
+      create: false
+    fullnameOverride: prometheus-operator
+    global:
+      rbac:
+        create: true
+    grafana:
+      enabled: false
+    kubeApiServer:
+      enabled: false
+    kubeControllerManager:
+      enabled: false
+    kubeDns:
+      enabled: false
+    kubeEtcd:
+      enabled: false
+    kubeProxy:
+      enabled: false
+    kubeScheduler:
+      enabled: false
+    kubeStateMetrics:
+      enabled: false
+    kubelet:
+      enabled: false
+    nodeExporter:
+      enabled: false
+    prometheus:
+      enabled: false
+    prometheusOperator:
+      cleanupCustomResource: true
+      cleanupCustomResourceBeforeInstall: true
+      createCustomResource: true
+      enabled: true
+      nodeSelector:
+        taco-lma: enabled
   wait: true

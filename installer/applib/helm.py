@@ -21,8 +21,11 @@ class Helm:
   def autoApplyPrerequisitions(self):
     return True
 
-  def install(self, verbose=False):
-    self.repo.install(self.name, self.namespace, self.override, verbose)
+  def install(self, verbose=False, kubeconfig='~/.kube/config'):
+    if self.getStatus() == None:
+      self.repo.install(self.name, self.namespace, self.override, verbose, kubeconfig)
+    else:
+      print("{} in the namespace-{} already installed".format(self.name, self.namespace))
 
   def uninstall(self, verbose=False):
     print('helm delete -n {} {} | grep status'
@@ -46,7 +49,7 @@ class Helm:
   def toSeperatedResources(self, targetdir='/cd', verbose=False):
     genfile=self.repo.genTemplateFile(self.name, self.namespace, self.override, verbose)
 
-    if verbose:
+    if verbose > 0:
       print('(DEBUG) seperate the template file')
     target = '{}/{}/'.format(targetdir, self.name)
     os.system('mkdir -p {0}; mv {1} {0}'.format(target, genfile))
@@ -55,7 +58,7 @@ class Helm:
     os.system(splitcmd)
     os.system('rm {0}{1}'.format(target,genfile))
     
-    if verbose:
+    if verbose > 0:
       print('(DEBUG) rename resource yaml files')
     for entry in os.scandir(target):
       refinedname =''
@@ -68,7 +71,7 @@ class Helm:
         except TypeError as exc:
           if os.path.getsize(entry)>80:
             print('(WARN)',exc,":::", parsed)
-            if verbose:
+            if verbose > 0:
               print("(DEBUG) Contents in the file :", entry.name)
               print(stream.readlines())
       if (refinedname!=''):
@@ -86,7 +89,7 @@ class Helm:
         .format(self.repository()))
       os.system('mkdir -p {}/{}'.format(targetdir, name))
 
-      if verbose:
+      if verbose > 0:
         print('(DEBUG) gernerate a template file')
 
       if name.endswith('-operator'):
@@ -96,13 +99,13 @@ class Helm:
         os.system('helm template -n {0} {1} monstarrepo/{2} --version {3} -f vo > {4}/{1}.plain.yaml'
           .format(namespace, name, self.chart(), self.version(), targetdir))
 
-      if verbose:
+      if verbose > 0:
         print('(DEBUG) seperate the template file')
       target = '{}/{}'.format(targetdir, name)
       splitcmd = "awk '{f=\""+target+"/_\" NR; print $0 > f}' RS='\n---\n' "+target+".plain.yaml"
       os.system(splitcmd)
       
-      if verbose:
+      if verbose > 0:
         print('(DEBUG) rename resource yaml files')
       for entry in os.scandir(target):
         refinedname =''
@@ -115,7 +118,7 @@ class Helm:
           except TypeError as exc:
             if os.path.getsize(entry)>80:
               print('(WARN)',exc,":::", parsed)
-              if verbose:
+              if verbose > 0:
                 print("(DEBUG) Contents in the file :", entry.name)
                 print(stream.readlines())
         if (refinedname!=''):
@@ -127,7 +130,7 @@ class Helm:
       os.system("rm {}/{}.plain.yaml".format(targetdir, name))
       os.system('helm repo rm monstarrepo | grep -i error')
     elif self.repotype == RepoType.GIT:
-      if verbose:
+      if verbose > 0:
         print('git clone -b {0} {1} temporary-clone'.format(self.versionOrReference, self.getUrl()))
       os.system('git clone -b {0} {1} temporary-clone </dev/null 2>t; cat t | grep fatal; rm t'
         .format(self.versionOrReference, self.getUrl()))

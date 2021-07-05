@@ -1,0 +1,72 @@
+#!/usr/local/bin/python3
+from applib.helm import Helm
+from applib.repo import Repo, RepoType
+import sys, yaml, os, time, getopt
+from common import *
+
+TEMPDIR="tmp"
+
+def template_yaml(manifests, gdir='cd', verbose=False):
+  for chart in manifests.keys():
+    if verbose:
+      print('(DEBUG) Generate resource yamls from {}'.format(chart))
+    manifests[chart].toSeperatedResources(gdir, verbose)
+
+def printhelp():
+  print(('''
+    Usage:{0} -m APP_MANIFEST [-w WORK_FOLW_NAME] [-v] [-k KUBE_CONFIG]
+     -m a manifest-yaml for application
+     -v verbos mode
+     -k or --kubeconfig=KUBE_CONFIG necessary to access your k8s cluster
+    Examples:
+     - {0} -m lma_manifest.yaml -w fed -v
+     - {0} -m lma_manifest.yaml -t -o gen
+    ''').format(sys.argv[0]))
+
+def main(argv):
+  manifest=''
+  wf='default'
+  verbose=False
+  out_dir='cd'
+  kubeconfig='~/.kube/config'
+
+  try:
+    opts, args = getopt.getopt(argv,"htm:w:vo:k:",["manifest=","workflow=","verbose","output="])
+  except getopt.GetoptError:
+    printhelp()
+    sys.exit(-1)
+  
+  for opt, arg in opts:
+    if opt == '-h':
+      printhelp()
+      sys.exit(0)
+    elif opt in ("-m", "--manifest"):
+      manifest = arg
+    elif opt in ("-w", "--workflow"):
+      wf = arg
+    elif opt in ("-v", "--verbose"):
+      verbose=True
+    elif opt in ("-k", "--kubeconfig"):
+      kubeconfig = arg
+
+  if (manifest==''):
+    printhelp()
+    sys.exit(-1)
+
+  try:
+    manifests=load_manifest(manifest)
+    if verbose:
+      print('(DEBUG) loaded manifest:',manifests)
+      for key in manifests.keys():
+        print(key, manifests[key])
+
+    config = yaml.safe_load(open('config.yaml','r'))
+
+    for key in config['workflow'][wf].keys():
+      install_and_check_done(manifests,config['workflow'][wf][key],config, verbose, kubeconfig)      
+
+  except yaml.YAMLError as exc:
+    print(exc)
+
+if __name__ == "__main__":
+  main(sys.argv[1:])
